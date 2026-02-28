@@ -102,7 +102,7 @@
 #DESIGN_CONFIG=./designs/ihp-sg13g2/riscv32i/config.mk
 
 # Default design
-DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
+DESIGN_CONFIG ?= ./designs/2nangate45/gcd/config.mk
 
 # Default TNS_END_PERCENT value
 export TNS_END_PERCENT ?=5
@@ -162,7 +162,7 @@ export TEST_DIR      ?= $(FLOW_HOME)/test
 # Include design and platform configuration
 include $(DESIGN_CONFIG)
 
-PUBLIC=nangate45 sky130hd sky130hs asap7 ihp-sg13g2 gf180
+PUBLIC=nangate45 sky130hd sky130hs asap7 ihp-sg13g2 gf180 gf12
 
 ifneq ($(wildcard $(PLATFORM_HOME)/$(PLATFORM)),)
   export PLATFORM_DIR = $(PLATFORM_HOME)/$(PLATFORM)
@@ -179,9 +179,9 @@ include $(PLATFORM_DIR)/config.mk
 export GALLERY_REPORT ?= 0
 # Enables hierarchical yosys
 export SYNTH_HIERARCHICAL ?= 0
-export SYNTH_STOP_MODULE_SCRIPT = $(OBJECTS_DIR)/mark_hier_stop_modules.tcl
+export SYNTH_STOP_MODULE_SCRIPT ?= $(OBJECTS_DIR)/mark_hier_stop_modules.tcl
 ifeq ($(SYNTH_HIERARCHICAL), 1)
-export HIER_REPORT_SCRIPT = $(SCRIPTS_DIR)/synth_hier_report.tcl
+export HIER_REPORT_SCRIPT ?= $(SCRIPTS_DIR)/synth_hier_report.tcl
 export MAX_UNGROUP_SIZE ?= 0
 endif
 # Enables Re-synthesis for area reclaim

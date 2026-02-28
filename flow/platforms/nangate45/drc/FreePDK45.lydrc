@@ -24,6 +24,7 @@
 #   https://www.eda.ncsu.edu/wiki/FreePDK45:Contents
 ################################################################################
 
+
 ####################
 # Inputs
 ####################
@@ -49,7 +50,7 @@ tile_borders(1.um)
 deep
 
 # Use 4 CPU cores
-threads(4)
+threads(6)
 verbose(true)
 
 ####################
@@ -142,9 +143,9 @@ implant.space(45.nm, euclidian).output("IMPLANT.4", "IMPLANT.4 : Minimum spacing
 nplus.and(pplus).output("IMPLANT.5", "IMPLANT.5 : Nimplant and pimplant must not overlap")
 
 # Contact
-cont.width(65.nm).output("CONTACT.1", "CONTACT.1 : Minimum/Maximum width of contact : 65nm")
+cont.edges.without_length(65.nm).output("CONTACT.1", "CONTACT.1 : Minimum/Maximum width of contact : 65nm")
 cont.space(75.nm, euclidian).output("CONTACT.2", "CONTACT.2 : Minimum spacing of contact : 75nm")
-cont.not(active.or(poly.or(metal1))).output("CONTACT.3", "CONTACT.3 : contact must be inside active or poly or metal1")
+cont.not(active).not(poly).not(metal1).output("CONTACT.3", "CONTACT.3 : contact must be inside active or poly or metal1")
 active.enclosing(cont, 5.nm, euclidian).output("CONTACT.4", "CONTACT.4 : Minimum enclosure of active around contact : 5nm")
 poly.enclosing(cont, 5.nm, euclidian).output("CONTACT.5", "CONTACT.5 : Minimum enclosure of poly around contact : 5nm")
 cont.separation(poly, 35.nm, euclidian).output("CONTACT.6", "CONTACT.6 : Minimum spacing of contact and poly : 35nm")
