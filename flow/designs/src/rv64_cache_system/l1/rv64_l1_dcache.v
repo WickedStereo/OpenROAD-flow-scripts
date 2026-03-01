@@ -133,12 +133,7 @@ module rv64_l1_dcache (
                      S_AMO_MODIFY = 4'd10,
                      S_AMO_WRITE = 4'd11;
 
-	rv64_l1_arrays #(
-		.SETS(SETS),
-		.WAYS(WAYS),
-		.TAG_W(TAG_W),
-		.INDEX_W(INDEX_W)
-	) u_arrays (
+	rv64_l1_arrays_sram u_arrays (
 		.clk              (clk),
 		.rst_n             (rst_n),
 		.invalidate_all   (state == S_IDLE ? invalidate_all : 1'b0),

@@ -251,12 +251,13 @@ module rv64_l2_fsm #(
     wire [$clog2(CORES)-1:0] probe_engine_b_launch_dest;
     wire [3:0] probe_engine_next_state;
 
-    rv64_l2_probe_planner #(
-        .CORES(CORES),
-        .WAYS(WAYS)
-    ) probe_planner (
+    rv64_l2_probe_block probe_block (
+        .clk(clk),
+        .rst_n(rst_n),
         .hit(hit),
         .req_opcode(req_opcode_q),
+        .req_line_addr(req_line_addr_q),
+        .victim_probe_addr(victim_probe_addr_q),
         .req_param(req_param_q),
         .hit_sharers(hit_sharers),
         .hit_owner_valid(hit_owner_valid),
@@ -268,25 +269,11 @@ module rv64_l2_fsm #(
         .dir_rd_owner_id(dir_rd_owner_id),
         .plru_victim_way(plru_victim_way),
         .probes_sent(probes_sent_q),
-        .probes_to_send(probes_to_send),
-        .next_probe_target(next_probe_target),
-        .probe_needed(probe_needed)
-    );
-
-    rv64_l2_probe_engine #(
-        .CORES(CORES),
-        .CID_W($clog2(CORES))
-    ) probe_engine (
-        .hit(hit),
-        .req_opcode(req_opcode_q),
-        .req_line_addr(req_line_addr_q),
-        .victim_probe_addr(victim_probe_addr_q),
-        .probes_to_send(probes_to_send),
-        .probes_sent(probes_sent_q),
-        .next_probe_target(next_probe_target),
-        .probe_needed(probe_needed),
         .b_valid(b_valid),
         .b_ready(b_ready),
+        .probes_to_send(probes_to_send),
+        .next_probe_target(next_probe_target),
+        .probe_needed(probe_needed),
         .mshr_set_probes(probe_mshr_set_probes),
         .b_launch(probe_engine_b_launch),
         .b_launch_opcode(probe_engine_b_launch_opcode),
@@ -317,11 +304,9 @@ module rv64_l2_fsm #(
     wire update_tag_we;
     wire [3:0] update_next_state;
 
-    rv64_l2_grant_update_engine #(
-        .CORES(CORES),
-        .SOURCE_W(SOURCE_W),
-        .CID_W($clog2(CORES))
-    ) grant_update_engine (
+    rv64_l2_grant_update_block grant_update_block (
+        .clk(clk),
+        .rst_n(rst_n),
         .processing_release(processing_release),
         .req_opcode(req_opcode_q),
         .req_param(req_param_q),

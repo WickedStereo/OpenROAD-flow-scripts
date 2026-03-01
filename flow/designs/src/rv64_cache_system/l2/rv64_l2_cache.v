@@ -235,11 +235,7 @@ module rv64_l2_cache #(
     // ---------------------------------------------------------
     // L2 Directory
     // ---------------------------------------------------------
-    rv64_l2_directory #(
-        .SETS(SETS),
-        .WAYS(WAYS),
-        .CORES(CORES)
-    ) directory (
+    rv64_l2_directory_sram directory (
         .clk(clk),
         .rst_n(rst_n),
         .rd_set(dir_rd_set),
@@ -320,7 +316,7 @@ module rv64_l2_cache #(
     // `data_we` is 1 bit. `data_wdata` is 64 bits.
     // We assume full 64-bit write to array.
     
-    rv64_l2_arrays arrays (
+    rv64_l2_arrays_sram arrays (
         .clk(clk),
         .rst_n(rst_n),
         .index(array_index),

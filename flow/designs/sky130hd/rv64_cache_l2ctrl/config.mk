@@ -4,13 +4,12 @@ export PLATFORM        = sky130hd
 
 export VERILOG_FILES = ./designs/src/rv64_cache_system/l2/rv64_l2_fsm.v \
 					   ./designs/src/rv64_cache_system/l2/rv64_l2_dir_lookup.v \
-					   ./designs/src/rv64_cache_system/l2/rv64_l2_probe_planner.v \
-					   ./designs/src/rv64_cache_system/l2/rv64_l2_probe_engine.v \
-					   ./designs/src/rv64_cache_system/l2/rv64_l2_grant_update_engine.v \
-					   ./designs/src/rv64_cache_system/l2/rv64_l2_plru.v
+					   ./designs/src/rv64_cache_system/l2/rv64_l2_plru.v \
+                       ./designs/src/rv64_cache_system/l2/rv64_l2_macros_bb.v
+
+export EXTRA_LEFS = ./results/sky130hd/rv64_l2_probe_block/base/6_final.lef ./results/sky130hd/rv64_l2_grant_update_block/base/6_final.lef
+export EXTRA_LIBS = ./results/sky130hd/rv64_l2_probe_block/base/6_final.lib ./results/sky130hd/rv64_l2_grant_update_block/base/6_final.lib
 export VERILOG_INCLUDE_DIRS = ./designs/src/rv64_cache_system
-export SYNTH_HIERARCHICAL = 1
-export HIER_REPORT_SCRIPT = ./designs/sky130hd/rv64_cache_l2ctrl/hier_report_fixed.tcl
 
 export SDC_FILE      = ./designs/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
 export FASTROUTE_TCL = ./designs/$(PLATFORM)/$(DESIGN_NICKNAME)/fastroute.tcl

@@ -605,3 +605,30 @@
 - Interpretation:
   - Constraint hygiene improved (removed stale/noisy endpoint exceptions) with no QoR regression.
   - Residual unconstrained endpoints are persistent model-level artifacts for these standalone control blocks and are not resolved by endpoint exception syntax or presence.
+
+## 2026-02-28 — L2 Control Iteration R (SRAM Top-Level Integration and Blackbox Fix)
+- Goal:
+  - Reintegrate the hardened L2 split-blocks (`rv64_l2_probe_block`, `rv64_l2_grant_update_block`) into `rv64_cache_system`.
+  - Replace inferred L1/L2 SRAM behavioral arrays with `sky130ram` generator macros.
+- Actions:
+  - Generated explicit `sram` wrappers for L1 data/tag, L2 data/tag, and L2 directory.
+  - Sourced available `.lef` and `.lib` models for SRAMs (`64x256`, `80x64`, `128x256`, `44x64`).
+  - Added empty `(* blackbox *)` module definitions for both the hardware L2 blocks and the `sky130ram` macros to prevent Yosys from embedding non-synthesizable `$print` tasks into the netlist.
+  - Filtered out their corresponding behavioral `.v` files in `rv64_cache_system/config.mk`.
+- Result:
+  - Full top-level `rv64_cache_system` successfully completed synthesis without `SYNTH_MEMORY_MAX_BITS` limits or memory-mapping freezes.
+  - Successfully moved past combinatorial memory inference blockers, but hit a netlist syntax error at Floorplan gate caused by the residual `$print` statements from earlier naive macro inclusion.
+- Next:
+  - Proceed with Floorplan (`Stage 2`) closure on the freshly synthesized top-level, observing correct placement of L1/L2 memory macros and the L2 hard block regions.
+
+## 2026-02-28 — Top-Level Floorplan Execution (Ongoing)
+- Goal:
+  - Complete Stage 2 (Floorplan) for the fully assembled `rv64_cache_system`, incorporating 148 dense macros (L1/L2 SRAMs + Hardened L2 control sub-blocks).
+- Current Execution Status:
+  - Command: `make DESIGN_CONFIG=./designs/sky130hd/rv64_cache_system/config.mk floorplan`
+  - The Macro Placement Layout (MPL) step has been running extensively (evaluating 72+ placement solutions).
+  - The large amount of macros (148) inside the 1.9x1.9cm die structure makes the partitioning and wirelength minimization phases heavily compute-bound.
+  - *Note:* The layout process is currently actively polling configurations and logging weighted wirelengths (minimum found so far is ~6.53e+09).
+- Next:
+  - Await MPL convergence and macro grid snapping.
+  - Validate macro orientations, IO placement, and PDN generation once the floorplan DEF is built.
