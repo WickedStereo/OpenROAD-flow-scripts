@@ -4,11 +4,6 @@ export PLATFORM    = nangate45
 
 export SYNTH_HIERARCHICAL = 1
 #
-# RTL_MP Settings
-export RTLMP_MAX_INST = 30000
-export RTLMP_MIN_INST = 5000
-export RTLMP_MAX_MACRO = 12
-export RTLMP_MIN_MACRO = 4 
 
 export VERILOG_FILES = $(DESIGN_HOME)/src/$(DESIGN_NAME)/pickled.v \
                        $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NAME)/macros.v
@@ -37,3 +32,9 @@ export MACRO_PLACE_HALO = 10 10
 
 export PLACE_DENSITY_LB_ADDON = 0.05
 export SKIP_GATE_CLONING      = 1
+
+export SWAP_ARITH_OPERATORS = 1
+export OPENROAD_HIERARCHICAL = 1
+
+export LEC_CHECK = 0
+

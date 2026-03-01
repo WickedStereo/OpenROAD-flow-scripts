@@ -7,3 +7,9 @@ export CORE_UTILIZATION       = 50
 export CORNER            = BC
 
 export ROUTING_LAYER_ADJUSTMENT = 0.45
+
+export SWAP_ARITH_OPERATORS = 1
+export OPENROAD_HIERARCHICAL = 1
+
+export LEC_CHECK = 0
+

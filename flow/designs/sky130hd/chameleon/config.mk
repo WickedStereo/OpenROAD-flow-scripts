@@ -29,8 +29,9 @@ export ABC_AREA = 1
 
 export SDC_FILE      = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.sdc
 
-export DIE_AREA   = 0 0 2920 3520
-export CORE_AREA  = 20 20 2900 3500
+export CORE_UTILIZATION       = 70
+export CORE_ASPECT_RATIO      = 1.3
+export CORE_MARGIN            = 2
 
 export chameleon_DIR = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)
 
@@ -44,10 +45,11 @@ export ADDITIONAL_LEFS  = $(chameleon_DIR)/lef/apb_sys_0.lef \
                           $(chameleon_DIR)/lef/DMC_32x16HC.lef \
                           $(chameleon_DIR)/lef/ibex_wrapper.lef
 
-export MACRO_PLACEMENT = $(chameleon_DIR)/chameleon.macro_placment.cfg
+#export MACRO_PLACEMENT_TCL = $(chameleon_DIR)/macro_placement.tcl
 
 export FP_PDN_RAIL_WIDTH  = 0.48
 export FP_PDN_RAIL_OFFSET = 0
 export TNS_END_PERCENT    = 100
 
+export LEC_CHECK = 0
 

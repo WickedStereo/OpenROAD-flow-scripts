@@ -26,8 +26,8 @@ markdown_table = ""
 
 markdown_table += "## Variables in alphabetic order\n\n"
 table_header = """
-| Variable | Description | Default | Deprecated |
-| --- | --- | --- | --- |
+| Variable | Description | Default |
+| --- | --- | --- |
 """
 table_rows = ""
 for key in sorted(data):
@@ -35,15 +35,15 @@ for key in sorted(data):
     description = value.get("description", "").replace("\n", " ").strip()
     table_rows += (
         f'| <a name="{key}"></a>{key}'
+        + f'{" (deprecated)" if value.get("deprecated", 0) == 1 else ""}'
         + f"| {description}"
         + f'| {value.get("default", "")}'
-        + f'| {"yes" if value.get("deprecated", 0) == 1 else ""}'
         + "|\n"
     )
 
 markdown_table += table_header + table_rows
 
-for stage in stages + ["All stages", "Uncategorized"]:
+for stage in stages + ["Uncategorized"]:
     markdown_table += f"## {stage} variables\n\n"
     stage_keys = [
         key

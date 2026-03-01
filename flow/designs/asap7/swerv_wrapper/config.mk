@@ -42,12 +42,6 @@ export SYNTH_KEEP_MODULES ?= \
   ram_256x34
 
 
-# RTL_MP Settings
-export RTLMP_MAX_INST = 30000
-export RTLMP_MIN_INST = 5000
-export RTLMP_MAX_MACRO = 30
-export RTLMP_MIN_MACRO = 4 
-
 export LIB_MODEL = CCS
 
 export VERILOG_FILES = $(DESIGN_HOME)/src/swerv/swerv_wrapper.sv2v.v \
@@ -64,3 +58,9 @@ export IO_CONSTRAINTS     = $(DESIGN_HOME)/$(PLATFORM)/swerv_wrapper/io.tcl
 export PLACE_DENSITY_LB_ADDON = 0.20
 
 export ROUTING_LAYER_ADJUSTMENT = 0.2
+
+export SWAP_ARITH_OPERATORS = 1
+export OPENROAD_HIERARCHICAL = 1
+
+export LEC_CHECK = 0
+

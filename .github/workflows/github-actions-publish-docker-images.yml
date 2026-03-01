@@ -27,10 +27,10 @@ on:
 
 jobs:
   buildCodespaceImage:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 600
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set environment variables
         run: echo "IMAGE=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
@@ -61,10 +61,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [["ubuntu20.04", "ubuntu:20.04"], ["ubuntu22.04", "ubuntu:22.04"]]
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           submodules: recursive
@@ -78,7 +78,7 @@ jobs:
 
       - name: Login to GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: gha
@@ -113,7 +113,7 @@ jobs:
           tool-cache: false
 
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           submodules: recursive
@@ -129,7 +129,7 @@ jobs:
 
       - name: Login to GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: gha

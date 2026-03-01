@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 function __setpaths() {
   if [[ "$OSTYPE" == "darwin"* ]]; then
-    DIR="$(dirname $(perl -e 'use Cwd "abs_path";print abs_path(shift)' "${BASH_SOURCE[0]}"))"
+    DIR="$(dirname $(perl -e 'use Cwd "abs_path";print abs_path(shift)' "${BASH_SOURCE[0]:-${(%):-%x}}"))"
   else
-    DIR="$(dirname $(readlink -f "${BASH_SOURCE[0]}"))"
+    DIR="$(dirname $(readlink -f "${BASH_SOURCE[0]:-${(%):-%x}}"))"
   fi
 
   export OPENROAD=${DIR}/tools/OpenROAD
@@ -13,6 +13,7 @@ function __setpaths() {
   # developer settings go in ./dev_env.sh
   export PATH=${DIR}/tools/install/OpenROAD/bin:$PATH
   export PATH=${DIR}/tools/install/yosys/bin:$PATH
+  export PATH=${DIR}/tools/install/kepler-formal/bin:$PATH
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
     export PATH="/Applications/KLayout/klayout.app/Contents/MacOS:$PATH"

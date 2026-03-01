@@ -162,6 +162,14 @@ module I2cGpioExpanderTop (
     .p2c    (sg13g2_IOPad_io_gpio_7_p2c   ), //o
     .pad    (io_gpio_7_PAD                )  //~
   );
+  (* keep *) sg13g2_IOPadVdd sg13g2_IOPadVdd_inst (
+  );
+  (* keep *) sg13g2_IOPadVss sg13g2_IOPadVss_inst (
+  );
+  (* keep *) sg13g2_IOPadIOVss sg13g2_IOPadIOVss_inst (
+  );
+  (* keep *) sg13g2_IOPadIOVdd sg13g2_IOPadIOVdd_inst (
+  );
   assign clock = sg13g2_IOPad_io_clock_p2c;
   assign reset = sg13g2_IOPad_io_reset_p2c;
   always @(*) begin

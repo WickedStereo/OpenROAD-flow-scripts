@@ -117,6 +117,7 @@ export PLACE_DENSITY ?= 0.60
 export MIN_ROUTING_LAYER ?= met1
 export MIN_CLK_ROUTING_LAYER ?= met3
 export MAX_ROUTING_LAYER ?= met5
+
 #
 # Define fastRoute tcl
 export FASTROUTE_TCL ?= $(PLATFORM_DIR)/fastroute.tcl
@@ -149,3 +150,4 @@ export KLAYOUT_DRC_FILE = $(PLATFORM_DIR)/drc/$(PLATFORM).lydrc
 #LVS Check
 export CDL_FILE = $(PLATFORM_DIR)/cdl/$(PLATFORM).cdl
 export KLAYOUT_LVS_FILE = $(PLATFORM_DIR)/lvs/$(PLATFORM).lylvs
+export REMOVE_CELLS_FOR_LEC = sky130_fd_sc_hd__tapvpwrvgnd*

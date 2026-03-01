@@ -27,10 +27,10 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu20.04", "ubuntu22.04"]
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           submodules: recursive

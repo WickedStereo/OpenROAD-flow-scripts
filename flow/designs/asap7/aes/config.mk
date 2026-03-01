@@ -29,3 +29,4 @@ else ifeq ($(FLOW_VARIANT),combine)
 	 $(WORK_HOME)/results/$(PLATFORM)/$(DESIGN_NICKNAME)/blackbox/1_synth.v \
 	 $(WORK_HOME)/results/$(PLATFORM)/$(DESIGN_NICKNAME)/blackbox/1_synth.v
 endif
+

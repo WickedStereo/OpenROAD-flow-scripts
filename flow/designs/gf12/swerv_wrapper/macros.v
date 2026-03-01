@@ -11,7 +11,7 @@ module ram_2048x39(CLK, ADR, D, Q, WE);
   wire n_21;
   gf12_1rf_lg11_w40_all mem(.CLK (CLK), .Q ({Q_int[39], Q}), .CEN
        (1'b1), .GWEN (n_21), .A (ADR), .D ({1'b0, D}), .EMA (3'b011),
-       .EMAW (2'b01), .RET1N (1'b1));
+       .EMAW (2'b01), .EMAS (1'b0), .STOV (1'b0), .RET1N (1'b1));
   assign n_21 = ~(WE);
 endmodule
 
@@ -28,7 +28,7 @@ module ram_64x21(CLK, ADR, D, Q, WE);
   wire n_16;
   gf12_1rf_lg6_w22_all mem(.CLK (CLK), .Q ({Q_int[21], Q}), .CEN
        (1'b1), .GWEN (n_16), .A (ADR), .D ({1'b0, D}), .EMA (3'b011),
-       .EMAW (2'b01), .RET1N (1'b1));
+       .EMAW (2'b01), .EMAS (1'b0), .STOV (1'b0), .RET1N (1'b1));
   assign n_16 = ~(WE);
 endmodule
 
@@ -43,7 +43,7 @@ module ram_256x34(CLK, ADR, D, Q, WE);
   wire [33:0] Q;
   wire n_51;
   gf12_1rf_lg8_w34_all mem(.CLK (CLK), .Q (Q), .CEN (1'b1), .GWEN
-       (n_51), .A (ADR), .D (D), .EMA (3'b011), .EMAW (2'b01), .RET1N
-       (1'b1));
+       (n_51), .A (ADR), .D (D), .EMA (3'b011), .EMAW (2'b01),
+       .EMAS (1'b0), .STOV (1'b0), .RET1N (1'b1));
   assign n_51 = ~(WE);
 endmodule

@@ -241513,7 +241513,8 @@ module bsg_mem_1rw_sync_width_p48_els_p256
     .wd_in(data_i),
     .rd_out(data_o),
     .ce_in(_0_net_),
-    .we_in(_1_net_)
+    .we_in(_1_net_),
+    .w_mask_in(48'b0)
   );
 
   assign _1_net_ = ~w_i;

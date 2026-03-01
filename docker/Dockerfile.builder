@@ -15,13 +15,25 @@ COPY --link build_openroad.sh build_openroad.sh
 
 FROM orfs-base AS orfs-builder-base
 
+# Inject compiler wrapper scripts that append the macros
+RUN mkdir -p /usr/local/bin/wrapped-cc && \
+    echo '#!/bin/sh' > /usr/local/bin/wrapped-cc/gcc && \
+    echo 'exec /usr/bin/gcc -D__TIME__="\"0\"" -D__DATE__="\"0\"" -D__TIMESTAMP__="\"0\"" -Wno-builtin-macro-redefined "$@"' >> /usr/local/bin/wrapped-cc/gcc && \
+    chmod +x /usr/local/bin/wrapped-cc/gcc && \
+    ln -sf /usr/local/bin/wrapped-cc/gcc /usr/local/bin/wrapped-cc/cc && \
+    echo '#!/bin/sh' > /usr/local/bin/wrapped-cc/g++ && \
+    echo 'exec /usr/bin/g++ -D__TIME__="\"0\"" -D__DATE__="\"0\"" -D__TIMESTAMP__="\"0\"" -Wno-builtin-macro-redefined "$@"' >> /usr/local/bin/wrapped-cc/g++ && \
+    chmod +x /usr/local/bin/wrapped-cc/g++
+
+# Prepend wrapper directory to PATH so they override system compilers
+ENV PATH="/usr/local/bin/wrapped-cc:$PATH"
+
 COPY --link tools tools
 ARG numThreads=$(nproc)
+ARG openroadVersion=NotSet
 
 RUN echo "" > tools/yosys/abc/.gitcommit && \
-  env CFLAGS="-D__TIME__=0 -D__DATE__=0 -D__TIMESTAMP__=0 -Wno-builtin-macro-redefined" \
-  CXXFLAGS="-D__TIME__=0 -D__DATE__=0 -D__TIMESTAMP__=0 -Wno-builtin-macro-redefined" \
-  ./build_openroad.sh --no_init --local --threads ${numThreads}
+  ./build_openroad.sh --no_init --local --threads ${numThreads} --openroad-args -DOPENROAD_VERSION=${openroadVersion}
 
 FROM orfs-base
 

@@ -77,7 +77,9 @@ export PLACE_DENSITY ?= 0.50
 # ---------------------------------------------------------
 # FastRoute options
 export MIN_ROUTING_LAYER = met1
+export MIN_CLK_ROUTING_LAYER = met3
 export MAX_ROUTING_LAYER = met5
+
 #
 # Define fastRoute tcl
 export FASTROUTE_TCL ?= $(PLATFORM_DIR)/fastroute.tcl
@@ -103,3 +105,4 @@ export RCX_RULES = $(PLATFORM_DIR)/rcx_patterns.rules
 export PWR_NETS_VOLTAGES  ?= VDD 1.8
 export GND_NETS_VOLTAGES  ?= VSS 0.0
 export IR_DROP_LAYER ?= met1
+export REMOVE_CELLS_FOR_LEC = sky130_fd_sc_hs__tapvpwrvgnd*

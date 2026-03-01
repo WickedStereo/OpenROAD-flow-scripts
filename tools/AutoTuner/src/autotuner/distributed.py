@@ -92,18 +92,21 @@ from autotuner.utils import (
     read_config,
     read_metrics,
     prepare_ray_server,
+    calculate_score,
+    ERROR_METRIC,
     CONSTRAINTS_SDC,
     FASTROUTE_TCL,
 )
+from autotuner.tensorboard_logger import TensorBoardLogger
 
 # Name of the final metric
 METRIC = "metric"
-# The worst of optimized metric
-ERROR_METRIC = 9e99
 # Path to the FLOW_HOME directory
 ORFS_FLOW_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../../../flow")
 )
+# Path to the WORK_HOME directory
+WORK_HOME = None
 # Global variable for args
 args = None
 
@@ -154,8 +157,8 @@ class AutoTunerBase(tune.Trainable):
             install_path=INSTALL_PATH,
         )
         self.step_ += 1
-        (score, effective_clk_period, num_drc) = self.evaluate(
-            read_metrics(metrics_file)
+        score, effective_clk_period, num_drc, die_area = self.evaluate(
+            read_metrics(metrics_file, args.stop_stage)
         )
         # Feed the score back to Tune.
         # return must match 'metric' used in tune.run()
@@ -163,6 +166,7 @@ class AutoTunerBase(tune.Trainable):
             METRIC: score,
             "effective_clk_period": effective_clk_period,
             "num_drc": num_drc,
+            "die_area": die_area,
         }
 
     def evaluate(self, metrics):
@@ -171,16 +175,7 @@ class AutoTunerBase(tune.Trainable):
         It can change in any form to minimize the score (return value).
         Default evaluation function optimizes effective clock period.
         """
-        error = "ERR" in metrics.values()
-        not_found = "N/A" in metrics.values()
-        if error or not_found:
-            return (ERROR_METRIC, "-", "-")
-        effective_clk_period = metrics["clk_period"] - metrics["worst_slack"]
-        num_drc = metrics["num_drc"]
-        gamma = effective_clk_period / 10
-        score = effective_clk_period
-        score = score * (100 / self.step_) + gamma * num_drc
-        return (score, effective_clk_period, num_drc)
+        return calculate_score(metrics, step=self.step_)
 
     def _is_valid_config(self, config):
         """
@@ -247,13 +242,13 @@ class PPAImprov(AutoTunerBase):
         error = "ERR" in metrics.values() or "ERR" in reference.values()
         not_found = "N/A" in metrics.values() or "N/A" in reference.values()
         if error or not_found:
-            return (ERROR_METRIC, "-", "-")
+            return (ERROR_METRIC, "-", "-", "-")
         ppa = self.get_ppa(metrics)
         gamma = ppa / 10
         score = ppa * (self.step_ / 100) ** (-1) + (gamma * metrics["num_drc"])
         effective_clk_period = metrics["clk_period"] - metrics["worst_slack"]
         num_drc = metrics["num_drc"]
-        return (score, effective_clk_period, num_drc)
+        return (score, effective_clk_period, num_drc, metrics["die_area"])
 
 
 def parse_arguments():
@@ -306,6 +301,14 @@ def parse_arguments():
         metavar="<float>",
         default=None,
         help="Time limit (in hours) for each trial run. Default is no limit.",
+    )
+    parser.add_argument(
+        "--stop_stage",
+        type=str,
+        metavar="<str>",
+        choices=["floorplan", "place", "cts", "globalroute", "route", "finish"],
+        default="finish",
+        help="Name of the stage to stop after. Default is finish.",
     )
     tune_parser.add_argument(
         "--resume",
@@ -388,6 +391,13 @@ def parse_arguments():
         help="Max number of threads openroad can use.",
     )
     parser.add_argument(
+        "--memory_limit",
+        type=float,
+        metavar="<float>",
+        default=None,
+        help="Maximum memory in GB that each trial job can use, process will be killed and not retried if it exceeds.",
+    )
+    parser.add_argument(
         "--server",
         type=str,
         metavar="<ip|servername>",
@@ -400,6 +410,13 @@ def parse_arguments():
         metavar="<int>",
         default=10001,
         help="The port of Ray server to connect.",
+    )
+    parser.add_argument(
+        "--work-dir",
+        type=str,
+        metavar="<path>",
+        default=None,
+        help="Work directory for outputs (passed to ORFS as WORK_HOME).",
     )
 
     parser.add_argument(
@@ -550,33 +567,67 @@ def sweep():
     else:
         repo_dir = os.path.abspath(os.path.join(ORFS_FLOW_DIR, ".."))
     print(f"[INFO TUN-0012] Log folder {LOCAL_DIR}.")
+
+    tb_log_dir = os.path.join(LOCAL_DIR, args.experiment)
+    print(
+        f"[INFO TUN-0034] TensorBoard logging enabled. Run: tensorboard --logdir={tb_log_dir}"
+    )
+
+    tb_logger = TensorBoardLogger.remote(log_dir=tb_log_dir)
+
     queue = Queue()
     parameter_list = list()
     for name, content in config_dict.items():
-        if not isinstance(content, list):
+        if isinstance(content, dict) and content.get("type") == "string":
+            if "values" not in content:
+                print(
+                    f"[ERROR TUN-0016] {name} string parameter missing 'values' field."
+                )
+                sys.exit(1)
+            if not isinstance(content["values"], list) or len(content["values"]) == 0:
+                print(f"[ERROR TUN-0017] {name} 'values' must be a non-empty list.")
+                sys.exit(1)
+            parameter_list.append([{name: i} for i in content["values"]])
+        elif isinstance(content, list):
+            if content[-1] == 0:
+                print("[ERROR TUN-0014] Sweep does not support step value zero.")
+                sys.exit(1)
+            parameter_list.append([{name: i} for i in np.arange(*content)])
+        else:
             print(f"[ERROR TUN-0015] {name} sweep is not supported.")
             sys.exit(1)
-        if content[-1] == 0:
-            print("[ERROR TUN-0014] Sweep does not support step value zero.")
-            sys.exit(1)
-        parameter_list.append([{name: i} for i in np.arange(*content)])
     parameter_list = list(product(*parameter_list))
     for parameter in parameter_list:
         temp = dict()
         for value in parameter:
             temp.update(value)
         queue.put(
-            [args, repo_dir, temp, LOCAL_DIR, SDC_ORIGINAL, FR_ORIGINAL, INSTALL_PATH]
+            [
+                args,
+                repo_dir,
+                temp,
+                SDC_ORIGINAL,
+                FR_ORIGINAL,
+                INSTALL_PATH,
+                tb_logger,
+            ]
         )
     workers = [consumer.remote(queue) for _ in range(args.jobs)]
     print("[INFO TUN-0009] Waiting for results.")
     ray.get(workers)
+    ray.get(tb_logger.close.remote())
+    print(f"[INFO TUN-0035] TensorBoard events written to {tb_log_dir}")
     print("[INFO TUN-0010] Sweep complete.")
 
 
 def main():
-    global args, SDC_ORIGINAL, FR_ORIGINAL, LOCAL_DIR, INSTALL_PATH, ORFS_FLOW_DIR, config_dict, reference, best_params
+    global args, SDC_ORIGINAL, FR_ORIGINAL, LOCAL_DIR, INSTALL_PATH, ORFS_FLOW_DIR, WORK_HOME, config_dict, reference, best_params
     args = parse_arguments()
+
+    # Set WORK_HOME from --work-dir argument
+    WORK_HOME = args.work_dir
+    if WORK_HOME:
+        print(f"[INFO TUN-0040] Work directory (WORK_HOME): {WORK_HOME}")
 
     # Read config and original files before handling where to run in case we
     # need to upload the files.
@@ -600,7 +651,7 @@ def main():
         TrainClass = set_training_class(args.eval)
         # PPAImprov requires a reference file to compute training scores.
         if args.eval == "ppa-improv":
-            reference = read_metrics(args.reference)
+            reference = read_metrics(args.reference, args.stop_stage)
 
         tune_args = dict(
             name=args.experiment,

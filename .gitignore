@@ -29,7 +29,6 @@ flow/rc_model.bin
 flow/*.tif.gz
 flow/*.def.v
 
-
 # RePlAce deps
 *PORT9.dat
 *POST9.dat
@@ -99,4 +98,10 @@ build
 metadata-base-at.json
 
 user.bazelrc
-bazel-*
+bazel-bin
+bazel-out
+bazel-OpenROAD-flow-scripts
+bazel-testlogs
+
+# python venv
+venv/

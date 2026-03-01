@@ -7,11 +7,11 @@ export SDC_FILE      = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)/constraint.
 
 export PLACE_PINS_ARGS = -min_distance 4 -min_distance_in_tracks
 
-export CORE_UTILIZATION = 20
+export CORE_UTILIZATION = 35
 export CORE_ASPECT_RATIO = 1
 export CORE_MARGIN = 2
 
-export PLACE_DENSITY = 0.6
+export PLACE_DENSITY_LB_ADDON = 0.2
 export TNS_END_PERCENT = 100
 
 export FASTROUTE_TCL = $(DESIGN_HOME)/$(PLATFORM)/$(DESIGN_NICKNAME)/fastroute.tcl
@@ -20,3 +20,7 @@ export REMOVE_ABC_BUFFERS = 1
 
 export CTS_CLUSTER_SIZE = 20
 export CTS_CLUSTER_DIAMETER = 50
+
+export SWAP_ARITH_OPERATORS = 1
+export OPENROAD_HIERARCHICAL = 1
+

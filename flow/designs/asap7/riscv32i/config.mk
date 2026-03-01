@@ -4,11 +4,6 @@ export PLATFORM    = asap7
 
 export SYNTH_HIERARCHICAL ?= 1
 
-export RTLMP_MIN_INST = 1000
-export RTLMP_MAX_INST = 3500
-export RTLMP_MIN_MACRO = 1
-export RTLMP_MAX_MACRO = 5
-
 export SYNTH_MINIMUM_KEEP_SIZE ?= 10000
 
 export VERILOG_FILES = $(sort $(wildcard $(DESIGN_HOME)/src/riscv32i/*.v))
@@ -19,8 +14,8 @@ ifeq ($(BLOCKS),)
 	export ADDITIONAL_LIBS = $(LIB_DIR)/fakeram7_256x32.lib
 endif
 
-export DIE_AREA = 0 0 80 90
-export CORE_AREA = 5 5 75 85 
+export CORE_UTILIZATION = 62
+export CORE_MARGIN      = 5
 
 export PLACE_DENSITY_LB_ADDON = 0.10
 
@@ -31,3 +26,7 @@ export TNS_END_PERCENT   = 100
 
 export CTS_CLUSTER_SIZE = 10
 export CTS_CLUSTER_DIAMETER = 50
+
+export SWAP_ARITH_OPERATORS = 1
+export OPENROAD_HIERARCHICAL = 1
+

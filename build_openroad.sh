@@ -21,13 +21,17 @@ OPENROAD_APP_BRANCH="master"
 INSTALL_PATH="$(pwd)/tools/install"
 
 YOSYS_USER_ARGS=""
-YOSYS_ARGS="CONFIG=clang"
+YOSYS_ARGS=""
 
 OPENROAD_APP_USER_ARGS=""
 OPENROAD_APP_ARGS=""
 
 DOCKER_OS_NAME="ubuntu22.04"
 PROC=-1
+
+VERIFIC_COMPONENTS='database util containers pct hier_tree verilog'
+WITH_VERIFIC=0
+VERIFIC_DIR=""
 
 function usage() {
         cat << EOF
@@ -36,6 +40,7 @@ Usage: $0 [-h|--help] [-o|--local] [-l|--latest]
           [--or_branch BRANCH_NAME] [--or_repo REPO_URL] [--no_init]
           [-n|--nice] [-t|--threads N]
           [--yosys-args-overwrite] [--yosys-args STRING]
+          [--with-verific PATH]
           [--openroad-args-overwrite] [--openroad-args STRING]
           [--install-path PATH] [--clean] [--clean-force]
 
@@ -48,6 +53,8 @@ Options:
 
     -l, --latest            Use the head of branch --or_branch or 'master'
                             by default for tools/OpenROAD.
+
+    -s, --skip_openroad     Skip building and all git operations on OpenROAD.
 
     --or_branch BRANCH_NAME Use the head of branch BRANCH for tools/OpenROAD.
 
@@ -64,6 +71,9 @@ Options:
                             Yosys compilation.
 
     --yosys-args STRING     Additional compilation flags for Yosys compilation.
+
+    --with-verific PATH     Compile Yosys with Verific support. PATH is the path
+                            to the Verific source folder.
 
     --openroad-args-overwrite
                             Do not use default flags set by this scrip during
@@ -107,6 +117,9 @@ while (( "$#" )); do
                 -l|--latest)
                         USE_OPENROAD_APP_LATEST=1
                         ;;
+                -s|--skip_openroad)
+                        SKIP_OPENROAD=1
+                        ;;
                 --or_branch)
                         OPENROAD_APP_BRANCH="$2"
                         shift
@@ -133,6 +146,19 @@ while (( "$#" )); do
                         ;;
                 --yosys-args)
                         YOSYS_USER_ARGS="$2"
+                        shift
+                        ;;
+                --with-verific)
+                        YOSYS_USER_ARGS+=" ENABLE_VERIFIC=1"
+                        YOSYS_USER_ARGS+=" ENABLE_VERIFIC_VHDL=0"
+                        YOSYS_USER_ARGS+=" VERIFIC_COMPONENTS='${VERIFIC_COMPONENTS}'"
+                        VERIFIC_DIR=${2}
+                        if [ ! -d "${VERIFIC_DIR}" ]; then
+                                echo "[ERROR] Verific path '${VERIFIC_DIR}' does not exist." >&2
+                                exit 1
+                        fi
+                        YOSYS_USER_ARGS+=" VERIFIC_DIR=${VERIFIC_DIR}"
+                        WITH_VERIFIC=1
                         shift
                         ;;
                 --openroad-args-overwrite)
@@ -237,18 +263,50 @@ __local_build()
             set -u
         fi
 
+        if [ -z "${SKIP_OPENROAD+x}" ]; then
+            echo "[INFO FLW-0018] Compiling OpenROAD."
+            eval ${NICE} ./tools/OpenROAD/etc/Build.sh -dir="$DIR/tools/OpenROAD/build" -threads=${PROC} -cmake=\'${OPENROAD_APP_ARGS}\'
+            ${NICE} cmake --build tools/OpenROAD/build --target install -j "${PROC}"
+        fi
+
         YOSYS_ABC_PATH=tools/yosys/abc
         if [[ -d "${YOSYS_ABC_PATH}/.git" ]]; then
             # update indexes to make sure git diff-index uses correct data
             git --work-tree=${YOSYS_ABC_PATH} --git-dir=${YOSYS_ABC_PATH}/.git update-index --refresh
         fi
 
-        echo "[INFO FLW-0017] Compiling Yosys."
-        ${NICE} make install -C tools/yosys -j "${PROC}" ${YOSYS_ARGS}
+        if [ ${WITH_VERIFIC} -eq 1 ]; then
+                echo "[INFO FLW-0031] Compiling Verific components."
+                cp -r "${VERIFIC_DIR}" verific
+                for c in ${VERIFIC_COMPONENTS}; do
+                        make -j -C "verific/${c}" clean
+                        make -j -C "verific/${c}"
+                done
+        fi
 
-        echo "[INFO FLW-0018] Compiling OpenROAD."
-        eval ${NICE} ./tools/OpenROAD/etc/Build.sh -dir="$DIR/tools/OpenROAD/build" -threads=${PROC} -cmake=\'${OPENROAD_APP_ARGS}\'
-        ${NICE} cmake --build tools/OpenROAD/build --target install -j "${PROC}"
+        echo "[INFO FLW-0017] Compiling Yosys."
+        eval ${NICE} make install -C tools/yosys -j "${PROC}" ${YOSYS_ARGS}
+
+        echo "[INFO FLW-0030] Compiling yosys-slang."
+        # CMAKE_FLAGS added to work around yosys-slang#141 (unable to build outside of git checkout)
+        ${NICE} make install -C tools/yosys-slang -j "${PROC}" YOSYS_PREFIX="${INSTALL_PATH}/yosys/bin/" CMAKE_FLAGS="-DYOSYS_SLANG_REVISION=unknown -DSLANG_REVISION=unknown"
+
+        echo "[INFO FLW-0031] Compiling kepler-formal"
+        ${NICE} cmake -B tools/kepler-formal/build tools/kepler-formal \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_CXX_FLAGS_RELEASE="-Ofast -march=native -ffast-math -flto" \
+                -DCMAKE_EXE_LINKER_FLAGS="-flto" \
+                -DCMAKE_BUILD_RPATH="${DIR}/tools/kepler-formal/build/thirdparty/naja/src/dnl:${DIR}/tools/kepler-formal/build/thirdparty/naja/src/nl/nl:${DIR}/tools/kepler-formal/build/thirdparty/naja/src/optimization" \
+                -DCMAKE_INSTALL_RPATH="${INSTALL_PATH}/kepler-formal/lib" \
+                -DCMAKE_BUILD_WITH_INSTALL_RPATH=OFF \
+                -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=OFF \
+                -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}/kepler-formal"
+        ${NICE} cmake --build tools/kepler-formal/build --target install -j "${PROC}"
+
+        if [ ${WITH_VERIFIC} -eq 1 ]; then
+                echo "[INFO FLW-0032] Cleaning up Verific components."
+                rm -rf verific
+        fi
 }
 
 __update_openroad_app_remote()
@@ -298,7 +356,7 @@ __common_setup()
                 __change_openroad_app_remote
         fi
 
-        if [ ! -z "${USE_OPENROAD_APP_LATEST+x}" ] || [ "${OPENROAD_APP_BRANCH}" != "master" ]; then
+        if [ -z "${SKIP_OPENROAD+x}" ] &&  ( [ ! -z "${USE_OPENROAD_APP_LATEST+x}" ] || [ "${OPENROAD_APP_BRANCH}" != "master" ] ) ; then
                 echo -n "[INFO FLW-0004] Updating OpenROAD app to the HEAD"
                 echo "  of ${OPENROAD_APP_REMOTE}/${OPENROAD_APP_BRANCH}."
                 __update_openroad_app_latest
@@ -340,7 +398,7 @@ __common_setup
 
 # Choose install method
 if [ -z "${LOCAL_BUILD+x}" ] && command -v docker &> /dev/null; then
-        echo -n "[INFO FLW-0000] Using docker build method."
+        echo "[INFO FLW-0000] Using docker build method."
         __docker_build
 else
         echo -n "[INFO FLW-0001] Using local build method."
